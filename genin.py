@@ -29,6 +29,10 @@ class PositionGenerator:
         The type of each particle.
     aids : list of int
         The id number of each particle.
+    charges : list of float
+        The charge of each particles, in units of fundamental charge.
+    temps : list of float
+        The temperature of each particle, in units of kelvin.
     sim_domain : list of list of float
         The bottom rear left and top forward right coordinates of
         the sim domain.
@@ -44,7 +48,7 @@ class PositionGenerator:
         The total number particles of each type in the simulation.
     """
 
-    def __init__(self, dx, dy, dz, fn='data.timd', Ti=10.0):
+    def __init__(self, dx, dy, dz, fn='data.timd', Ti=10.0, Te=100.0):
         """A function to initialize a position generator instance.
 
         This function generates the lists of positions, types, and ids
@@ -63,6 +67,8 @@ class PositionGenerator:
         Ti : float, optional
             The temperature of the ions, in eV, to determine electron numbers.
             Defaults to 10 eV.
+        Te : float, optional
+            The temperature of the electrons in eV.
         """
         self.sim_domain = [[0, 0, 0], [dx, dy, dz]]
         self.al_domain = [[0, 0, 0], [dx, 0.5*dy, dz]]
@@ -73,13 +79,34 @@ class PositionGenerator:
         self.zs = []
         self.atypes = []
         self.ids = []
+        self.temps = []
+        self.charges = []
         self.zbar = {'Al': 0.0, 'Au': 0.0}
         self.nparticles = {'Al': 0, 'Au': 0, 'e': 0}
 
         self.set_zbar(Ti)
         self.set_nparticles()
         self.set_positions()
+        self.set_charges()
+        self.set_temps(Ti, Te)
         self.write_data(fn)
+
+    def set_charges(self):
+        for i in range(len(self.atypes)):
+            if self.atypes[i] == 1:
+                self.charges.append(-1.0)
+            elif self.atypes[i] == 2:
+                self.charges.append(float(self.zbar['Al']))
+            elif self.atypes[i] == 3:
+                self.charges.append(float(self.zbar['Au']))
+
+    def set_temps(self, Ti, Te):
+        inv_kb = 1.0/(8.6173303e-5)
+        for i in range(len(self.atypes)):
+            if self.atypes[i] == 1:
+                self.temps.append(inv_kb*Te)
+            elif self.atypes[i] == 2 or self.atypes[i] == 3:
+                self.temps.append(inv_kb*Ti)
 
     def set_zbar(self, Ti):
         """Calculates the integer number of electrons unbound from each ion
@@ -395,9 +422,13 @@ class PositionGenerator:
         f.write("Atoms\n")
         f.write("\n")
         for i in range(len(self.ids)):
-            s = "%d %d %.16e %.16e %.16e\n" % (self.ids[i], self.atypes[i],
-                                               self.xs[i], self.ys[i],
-                                               self.zs[i])
+            s = "%d %d %.16e %.16e %.16e %.16e %.16e\n" % (self.ids[i],
+                                                           self.atypes[i],
+                                                           self.charges[i],
+                                                           self.temps[i],
+                                                           self.xs[i],
+                                                           self.ys[i],
+                                                           self.zs[i])
             f.write(s)
         f.close()
 
