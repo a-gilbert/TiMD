@@ -89,7 +89,8 @@ class PositionGenerator:
         self.set_positions()
         self.set_charges()
         self.set_temps(Ti, Te)
-        self.write_data(fn)
+        self.write_lammps_data(fn)
+        self.write_ovito_data()
 
     def set_charges(self):
         for i in range(len(self.atypes)):
@@ -392,7 +393,7 @@ class PositionGenerator:
         self.set_aluminum_positions()
         self.set_gold_positions()
 
-    def write_data(self, fn):
+    def write_lammps_data(self, fn):
         """Writes all of the generated data to file."""
         f = open(fn, 'w')
         f.write("#TiMD Input Data File\n")
@@ -421,6 +422,35 @@ class PositionGenerator:
                                                            self.zs[i])
             f.write(s)
         f.close()
+
+    def write_ovito_data(self):
+        """Writes all of the generated data to file."""
+        f = open('ovito_dat.timd', 'w')
+        f.write("#TiMD Input Data File\n")
+        f.write("\n")
+        n_tot = self.nparticles['Al']*(1+self.zbar['Al'])
+        n_tot = n_tot + self.nparticles['Au']*(1 + self.zbar['Au'])
+        f.write("%d atoms\n" % n_tot)
+        f.write("3 atom types\n")
+        bounds = [['xlo', 'ylo', 'zlo'],
+                  ['xhi', 'yhi', 'zhi']]
+        for i in range(3):
+            s = "%.16e %.16e %s %s\n" % (self.sim_domain[0][i],
+                                         self.sim_domain[1][i],
+                                         bounds[0][i], bounds[1][i])
+            f.write(s)
+        f.write("\n")
+        f.write("Atoms\n")
+        f.write("\n")
+        for i in range(len(self.ids)):
+            s = "%d %d %.16e %.16e %.16e\n" % (self.ids[i],
+                                               self.atypes[i],
+                                               self.xs[i],
+                                               self.ys[i],
+                                               self.zs[i])
+            f.write(s)
+        f.close()
+
 
 
 def main():
