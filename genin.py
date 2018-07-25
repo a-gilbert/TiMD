@@ -71,8 +71,8 @@ class PositionGenerator:
             The temperature of the electrons in eV.
         """
         self.sim_domain = [[0, 0, 0], [dx, dy, dz]]
-        self.al_domain = [[0, 0, 0], [dx, dy, 0.5*dz]]
-        self.au_domain = [[0, 0, 0.5*dz],
+        self.al_domain = [[0, 0, 0], [dx, 0.5*dy, dz]]
+        self.au_domain = [[0, 0.5*dy, 0],
                           [dx, dy, dz]]
         self.xs = []
         self.ys = []
