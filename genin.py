@@ -189,7 +189,19 @@ class PositionGenerator:
         out = random.sample(out, n)
         return out
 
-    def deposit_electrons(self, n, z, l, x0, y0, z0, xr, yr, zr):
+    def get_dr(self, r0, rmax, l):
+        """A convenience function to determine the maximum allowed change in
+        a unit cell."""
+        dr = [0, 0, 0]
+        for i in range(3):
+            c = r0[i] + l
+            if c < rmax[i]:
+                dr[i] = l
+            else:
+                dr[i] = rmax[i] - r0[i]
+        return dr
+
+    def deposit_electrons(self, n, z, r0, dr, rr):
         """A method to deposit z electrons all within a cube of length l from
         x0, y0, z0.
 
@@ -199,100 +211,74 @@ class PositionGenerator:
             The first electron id.
         z : int
             Number of electrons being added.
-        l : float
-            The characteristic length derived from species number density.
-        x0 : float
-            The base x position.
-        y0 : float
-            The base y position.
-        z0 : float
-            The base z position.
-        xr : list of float
-            Random, non-repeating, x scale factors.
-        yr : list of float
-            Random, non-repeating, y scale factors.
-        zr : list of float
-            Random, non-repeating, z scale factors.
+        r0 : list of float
+            The bottom rear left corner of the cell.
+        dr : list of float
+            The allowed change in length in each direction for a cell.
+        rr : list of list of float
+            The list of random scaling factors in each direction applied to dr
+            for each particle.
        """
         for i in range(z):
             self.ids.append(n + i)
             self.atypes.append(1)
-            self.xs.append(x0 + l*xr[i])
-            self.ys.append(y0 + l*yr[i])
-            self.zs.append(z0 + l*zr[i])
+            self.xs.append(r0[0] + dr[0]*rr[0][i])
+            self.ys.append(r0[0] + dr[1]*rr[1][i])
+            self.zs.append(r0[0] + dr[2]*rr[2][i])
 
-    def deposit_aluminum_ion(self, n, lal, x0, y0, z0, xr, yr, zr):
+    def deposit_aluminum_ion(self, n, r0, dr, rr):
         """A method to deposit a single aluminum ion into storage.
 
         Parameters
         ----------
         n : int
             The particle id.
-        lal : float
-            Characteristic length derived from number density.
-        x0 : float
-            The lower bound x position.
-        y0 : float
-            The lower bound y position.
-        z0 : float
-            The lower bound z position.
-        xr : float
-            Random, non-repeating, x scale factor.
-        yr : float
-            Random, non-repeating, y scale factor.
-        zr : float
-            Random, non-repeating, z scale factor.
+        r0 : list of float
+            The left bottom rear point of the cell.
+        dr : list of float
+            The maximum amount of allowed change in each direction.
+        rr : list of float
+            The scaling factor applied to dr in each dimension.
        """
         self.ids.append(n)
         self.atypes.append(2)
-        self.xs.append(x0 + lal*xr)
-        self.ys.append(y0 + lal*yr)
-        self.zs.append(z0 + lal*zr)
+        self.xs.append(r0[0] + dr[0]*rr[0])
+        self.ys.append(r0[1] + dr[1]*rr[1])
+        self.zs.append(r0[2] + dr[2]*rr[2])
 
-    def deposit_gold_ion(self, n, lau, x0, y0, z0, xr, yr, zr):
-        """A method to deposit a single aluminum ion into storage.
+    def deposit_gold_ion(self, n, r0, dr, rr):
+        """A method to deposit a single gold ion into storage.
 
         Parameters
         ----------
         n : int
             The particle id.
-        lau : float
-            Characteristic length derived from number density.
-        x0 : float
-            The lower bound x position.
-        y0 : float
-            The lower bound y position.
-        z0 : float
-            The lower bound z position.
-        xr : float
-            Random, non-repeating, x scale factor.
-        yr : float
-            Random, non-repeating, y scale factor.
-        zr : float
-            Random, non-repeating, z scale factor.
+        r0 : list of float
+            The left bottom rear point of the cell.
+        dr : list of float
+            The maximum amount of allowed change in each direction.
+        rr : list of float
+            The scaling factor applied to dr in each dimension.
        """
         self.ids.append(n)
         self.atypes.append(3)
-        self.xs.append(x0 + lau*xr)
-        self.ys.append(y0 + lau*yr)
-        self.zs.append(z0 + lau*zr)
+        self.xs.append(r0[0] + dr[0]*rr[0])
+        self.ys.append(r0[1] + dr[1]*rr[1])
+        self.zs.append(r0[2] + dr[2]*rr[2])
 
-    def deposit_aluminum(self, n, l, x0, y0, z0):
+    def deposit_aluminum(self, n, r0, dr):
         """Deposits an aluminum ion and its electrons at unique positions in a
-        cube of length l with bottom rear left corner centered at x0, y0, z0.
+        rectangle with bottom rear left corner centered at r0 and top forward
+        right edge at r0 + dr.
 
         Parameters
         ----------
         n : int
             The nucleus id.
-        l : float
-            Characteristic length derived from number density.
-        x0 : float
-            The lower bound x position.
-        y0 : float
-            The lower bound y position.
-        z0 : float
-            The lower bound z position.
+        r0 : list of float
+            The rear left bottom point of the cell in question.
+        dr : list of float
+            The distance to the top right forward point of the cell.
 
         Returns
         -------
@@ -303,27 +289,24 @@ class PositionGenerator:
         xr = self.get_nunique_rands(n_tot)
         yr = self.get_nunique_rands(n_tot)
         zr = self.get_nunique_rands(n_tot)
-        self.deposit_aluminum_ion(n, l, x0, y0, z0, xr[0], yr[0], zr[0])
-        self.deposit_electrons(n+1, self.zbar['Al'], l, x0, y0, z0,
-                               xr[1:], yr[1:], zr[1:])
+        self.deposit_aluminum_ion(n, r0, dr, [xr[0], yr[0], zr[0]])
+        self.deposit_electrons(n+1, self.zbar['Al'], r0, dr,
+                               [xr[1:], yr[1:], zr[1:]])
         return n + n_tot
 
-    def deposit_gold(self, n, l, x0, y0, z0):
-        """Deposits an aluminum ion and its electrons at unique positions in a
-        cube of length l with bottom rear left corner centered at x0, y0, z0.
+    def deposit_gold(self, n, r0, dr):
+        """Deposits a gold ion and its electrons at unique positions in a
+        rectangle with bottom rear left corner centered at r0 and top forward
+        right edge at r0 + dr.
 
         Parameters
         ----------
         n : int
             The nucleus id.
-        l : float
-            Characteristic length derived from number density.
-        x0 : float
-            The lower bound x position.
-        y0 : float
-            The lower bound y position.
-        z0 : float
-            The lower bound z position.
+        r0 : list of float
+            The rear left bottom point of the cell in question.
+        dr : list of float
+            The distance to the top right forward point of the cell.
 
         Returns
         -------
@@ -334,9 +317,9 @@ class PositionGenerator:
         xr = self.get_nunique_rands(n_tot)
         yr = self.get_nunique_rands(n_tot)
         zr = self.get_nunique_rands(n_tot)
-        self.deposit_gold_ion(n, l, x0, y0, z0, xr[0], yr[0], zr[0])
-        self.deposit_electrons(n+1, self.zbar['Au'], l, x0, y0, z0,
-                               xr[1:], yr[1:], zr[1:])
+        self.deposit_gold_ion(n, r0, dr, [xr[0], yr[0], zr[0]])
+        self.deposit_electrons(n+1, self.zbar['Au'], r0, dr,
+                               [xr[1:], yr[1:], zr[1:]])
         return n + n_tot
 
     def set_aluminum_positions(self):
@@ -350,6 +333,8 @@ class PositionGenerator:
         ymax = self.al_domain[1][1]
         zmax = self.al_domain[1][2]
 
+        rmax = [xmax, ymax, zmax]
+
         l_al = (xmax-x0)*(ymax-y0)*(zmax-z0)
         l_al = l_al/self.nparticles['Al']
         l_al = math.pow(l_al, 1./3.)
@@ -360,7 +345,9 @@ class PositionGenerator:
             while y0 < ymax:
                 while z0 < zmax:
                     if n < n_tot:
-                        n = self.deposit_aluminum(n, l_al, x0, y0, z0)
+                        r0 = [x0, y0, z0]
+                        dr = self.get_dr(r0, rmax, l_al)
+                        n = self.deposit_aluminum(n, r0, dr)
                     z0 += l_al
                 z0 = self.al_domain[0][2]
                 y0 += l_al
@@ -378,6 +365,7 @@ class PositionGenerator:
         xmax = self.au_domain[1][0]
         ymax = self.au_domain[1][1]
         zmax = self.au_domain[1][2]
+        rmax = [xmax, ymax, zmax]
 
         l_au = (xmax-x0)*(ymax-y0)*(zmax-z0)
         l_au = l_au/self.nparticles['Au']
@@ -390,13 +378,15 @@ class PositionGenerator:
             while y0 < ymax:
                 while z0 < zmax:
                     if n < n_tot:
-                        n = self.deposit_gold(n, l_au, x0, y0, z0)
+                        r0 = [x0, y0, z0]
+                        dr = self.get_dr(r0, rmax, l_au)
+                        n = self.deposit_gold(n, r0, dr)
                     z0 += l_au
                 z0 = self.au_domain[0][2]
                 y0 += l_au
             x0 += l_au
-            y0 = self.al_domain[0][1]
-            z0 = self.al_domain[0][2]
+            y0 = self.au_domain[0][1]
+            z0 = self.au_domain[0][2]
 
     def set_positions(self):
         self.set_aluminum_positions()
