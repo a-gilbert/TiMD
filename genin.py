@@ -224,8 +224,8 @@ class PositionGenerator:
             self.ids.append(n + i)
             self.atypes.append(1)
             self.xs.append(r0[0] + dr[0]*rr[0][i])
-            self.ys.append(r0[0] + dr[1]*rr[1][i])
-            self.zs.append(r0[0] + dr[2]*rr[2][i])
+            self.ys.append(r0[1] + dr[1]*rr[1][i])
+            self.zs.append(r0[2] + dr[2]*rr[2][i])
 
     def deposit_aluminum_ion(self, n, r0, dr, rr):
         """A method to deposit a single aluminum ion into storage.
