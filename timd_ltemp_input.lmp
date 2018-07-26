@@ -54,4 +54,4 @@ neigh_modify delay 0 every 1 check yes
 
 dump dumpfix all custom 10 LTemp/Out* id type mass q temp x y z vx vy vz fx fy fz 
 dump_modify dumpfix first yes
-run 2000
+run 200000
