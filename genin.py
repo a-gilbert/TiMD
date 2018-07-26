@@ -545,14 +545,6 @@ def convert_data(fn_in, fn_out):
     for i in range(len(ids)):
         s = "%d %.16e %.16e %.16e\n" % (ids[i], vxs[i], vys[i], vzs[i])
         fout.write(s)
-
-    for i in range(len(ids)):
-        s = "%d %d %.16e %.16e %.16e\n" % (ids[i],
-                                           atypes[i],
-                                           xs[i],
-                                           ys[i],
-                                           zs[i])
-        fout.write(s)
     fout.close()
 
 
