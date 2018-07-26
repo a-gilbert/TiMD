@@ -46,7 +46,7 @@ pair_coeff 2 3 qsp/kelbg 2 0 0
 kspace_style pppm 1e-4
 
 fix microcanonical_ensemble all nve
-timestep 1e-6
+timestep 5e-8
 
 neigh_modify delay 0 every 1 check yes
 
