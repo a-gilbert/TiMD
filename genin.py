@@ -524,6 +524,7 @@ def convert_data(fn_in, fn_out):
     fout.write("\n")
     for i in range(len(ids)):
         s = "%d %.16e\n" % (ids[i], masses[i])
+        fout.write(s)
     fout.write("\n")
     fout.write("Velocities\n")
     fout.write("\n")
