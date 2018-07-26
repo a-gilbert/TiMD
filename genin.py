@@ -48,7 +48,8 @@ class PositionGenerator:
         The total number particles of each type in the simulation.
     """
 
-    def __init__(self, dx, dy, dz, fn='data.timd', Ti=10.0, Te=100.0):
+    def __init__(self, dx, dy, dz, fn='thermostat_data.timd', Ti=10.0,
+                 Te=100.0):
         """A function to initialize a position generator instance.
 
         This function generates the lists of positions, types, and ids
@@ -452,11 +453,101 @@ class PositionGenerator:
         f.close()
 
 
+def convert_data(fn_in, fn_out):
+    """A function to convert the information in a thermostat run data dump
+       into a file that lammps can read as input."""
+    xs = []
+    ys = []
+    zs = []
+    vxs = []
+    vys = []
+    vzs = []
+    atypes = []
+    ids = []
+    charges = []
+    temps = []
+    masses = []
+    sim_domain = [[0, 0, 0], [0, 0, 0]]
+    nparticles = 0
+
+    finput = open(fn_in, "r")
+    flines = finput.readlines()
+    finput.close()
+    nparticles = int(flines[3])
+
+    for i in range(3):
+        bounds = flines[5 + i].split()
+        sim_domain[0][i] = float(bounds[0])
+        sim_domain[1][i] = float(bounds[1])
+
+    for i in range(9, len(flines)):
+        line = flines[i].split()
+        ids.append(int(line[0]))
+        atypes.append(int(line[1]))
+        masses.append(float(line[2]))
+        charges.append(float(line[3]))
+        temps.append(float(line[4]))
+        xs.append(float(line[5]))
+        ys.append(float(line[6]))
+        zs.append(float(line[7]))
+        vxs.append(float(line[8]))
+        vys.append(float(line[9]))
+        vzs.append(float(line[10]))
+
+    fout = open(fn_out, "w")
+    fout.write("#TiMD Input Data File")
+    fout.write("%d atoms\n" % nparticles)
+    fout.write("3 atom types\n")
+    bounds_keys = [['xlo', 'ylo', 'zlo'], ['xhi', 'yhi', 'zhi']]
+    for i in range(3):
+        s = "%.16e %.16e %s %s\n" % (sim_domain[0][i],
+                                     sim_domain[1][i],
+                                     bounds_keys[0][i],
+                                     bounds_keys[1][i])
+        fout.write(s)
+    fout.write("\n")
+    fout.write("Atoms\n")
+    fout.write("\n")
+
+    for i in range(len(ids)):
+        s = "%d %d %.16e %.16e %.16e %.16e %.16e\n" % (ids[i],
+                                                       atypes[i],
+                                                       charges[i],
+                                                       temps[i],
+                                                       xs[i],
+                                                       ys[i],
+                                                       zs[i])
+        fout.write(s)
+
+    fout.write("\n")
+    fout.write("Masses\n")
+    fout.write("\n")
+    for i in range(len(ids)):
+        s = "%d %.16e\n" % (ids[i], masses[i])
+    fout.write("\n")
+    fout.write("Velocities\n")
+    fout.write("\n")
+    for i in range(len(ids)):
+        s = "%d %.16e %.16e %.16e\n" % (ids[i], vxs[i], vys[i], vzs[i])
+        fout.write(s)
+
+    for i in range(len(ids)):
+        s = "%d %d %.16e %.16e %.16e\n" % (ids[i],
+                                           atypes[i],
+                                           xs[i],
+                                           ys[i],
+                                           zs[i])
+        fout.write(s)
+    fout.close()
+
 
 def main():
-    if len(sys.argv) == 4:
-        PositionGenerator(float(sys.argv[1]), float(sys.argv[2]),
-                          float(sys.argv[3]))
+    if len(sys.argv) == 5 and sys.argv[1] == "thermostat":
+        PositionGenerator(float(sys.argv[2]), float(sys.argv[3]),
+                          float(sys.argv[4]))
+    elif len(sys.argv) == 4 and sys.argv[1] == "sim":
+        convert_data(sys.argv[2], sys.argv[3])
+
     quit()
 
 
