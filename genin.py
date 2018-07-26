@@ -522,9 +522,23 @@ def convert_data(fn_in, fn_out):
     fout.write("\n")
     fout.write("Masses\n")
     fout.write("\n")
+    type1 = 0
+    type2 = 0
+    type3 = 0
     for i in range(len(ids)):
-        s = "%d %.16e\n" % (ids[i], masses[i])
-        fout.write(s)
+        if type1 == 0 and atypes[i] == 1:
+            s = "%d %.16e\n" % (atypes[i], masses[i])
+            fout.write(s)
+            type1 = 1
+        elif type2 == 0 and atypes[i] == 2:
+            s = "%d %.16e\n" % (atypes[i], masses[i])
+            fout.write(s)
+            type2 = 1
+        elif type3 == 0 and atypes[i] == 3:
+            s = "%d %.16e\n" % (atypes[i], masses[i])
+            fout.write(s)
+            type3 = 1
+
     fout.write("\n")
     fout.write("Velocities\n")
     fout.write("\n")
