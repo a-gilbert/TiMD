@@ -495,7 +495,7 @@ def convert_data(fn_in, fn_out):
         vzs.append(float(line[10]))
 
     fout = open(fn_out, "w")
-    fout.write("#TiMD Input Data File")
+    fout.write("#TiMD Input Data File\n")
     fout.write("%d atoms\n" % nparticles)
     fout.write("3 atom types\n")
     bounds_keys = [['xlo', 'ylo', 'zlo'], ['xhi', 'yhi', 'zhi']]
