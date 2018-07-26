@@ -31,10 +31,11 @@ pair_style hybrid/overlay qsp/f qsp/kelbg coul/long 2
 pair_coeff * * coul/long
 
 #qsp/f interactions. Second argument = 1, means this is on for this pair interaction
-pair_coeff 1 1 qsp/f 1 1
-pair_coeff 1 2 qsp/f 1 0
-pair_coeff 1 3 qsp/f 1 0
-pair_coeff 2 3 qsp/f 1 0
+pair_coeff 1 1 qsp/f 2 1
+pair_coeff 1 2 qsp/f 2 0
+pair_coeff 1 3 qsp/f 2 0
+pair_coeff 2 3 qsp/f 2 0
+pair_coeff 2 2 qsp/f 2 0
 
 #qsp/kelbg interactions. 
 #pair_coeff type1 type2 qsp/kelbg cutoff style on (or off=0)
@@ -42,6 +43,8 @@ pair_coeff 1 1 qsp/kelbg 2 0 1
 pair_coeff 1 2 qsp/kelbg 2 0 1
 pair_coeff 1 3 qsp/kelbg 2 0 1
 pair_coeff 2 3 qsp/kelbg 2 0 0
+pair_coeff 2 2 qsp/kelbg 2 0 0
+pair_coeff 3 3 qsp/kelbg 2 0 0
 
 kspace_style pppm 1e-4
 
@@ -51,6 +54,6 @@ timestep 5e-8
 neigh_modify delay 0 every 1 check yes
 
 
-dump dumpfix all custom 10 NoLTemp/Out* id type mass q temp x y z vx vy vz fx fy fz 
+dump dumpfix all custom 100 NoLTemp/Out* id type mass q temp x y z vx vy vz fx fy fz 
 dump_modify dumpfix first yes
 run 200000
