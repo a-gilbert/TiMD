@@ -248,14 +248,3 @@ class SimData:
         for i in range(num_part):
             avg_temp += self.get_temp(xs[i], ys[i], zs[i], r, t)
         return avg_temp
-
-
-
-
-
-    def get_avg_temp(self, t, r):
-        xs = self.xs[self.ptypes == t]
-        ys = self.ys[self.pytpes == t]
-        zs = self.zs[self.ptypes == t]
-        ids = self.ids[self.ptypes == t]
-        avg_temp = 
