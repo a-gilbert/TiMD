@@ -1,0 +1,129 @@
+#LAMMPS input for modeling a simple ocp 
+# at a fixed temperature and density.
+
+#Temp: 1.58e6 K
+#nden: 2.5e25 /cm^3 = 25/A^3
+#w_pe = 2.8e17/s = 2.8e5/ps
+
+#all inputs are in metal units.
+#independent input params
+#plasma params
+variable i_dens equal 25
+variable temp equal 1.58e6
+
+
+#sim params
+variable n_ions equal 128
+variable dt_frac equal 0.03  #fraction of electron plasma frequency per timestep
+variable nsteps equal 6e4
+variable coul_cut equal 0.5
+variable pppm_rel_error equal 1e-8
+
+#diffraction params
+variable diff_pot string qsp/hansen
+variable ediff_on equal 1
+variable idiff_on equal 1
+
+#symmetry params
+variable sym_pot string qsp/hms
+variable esym_on equal 1
+variable isym_on equal 0
+
+
+#derived plasma params, and thus derived sim params
+variable efreq equal 8.98e3*sqrt(v_i_dens)
+variable etime equal 1/v_efreq
+variable dt equal v_dt_frac*v_etime
+variable box_len equal (v_n_ions/v_i_dens)^0.333333
+
+units metal
+
+#mass = grams/mole
+#distance = Angstroms
+#time = picoseconds
+#energy = eV
+#velocity = Angstroms/picosecond
+#force = eV/Angstrom
+#torque = eV
+#temperature = Kelvin
+#pressure = bars
+#dynamic viscosity = Poise
+#charge = multiple of electron charge (1.0 is a proton)
+#dipole = charge*Angstroms
+#electric field = volts/Angstrom
+#density = gram/cm^dim
+
+dimension 3
+boundary p p p
+atom_style tcharge
+newton on
+
+region sim_box block 0 ${box_len} 0 ${box_len} 0 ${box_len} 
+
+create_box 2 sim_box
+
+#create electrons
+create_atoms 1 random ${n_ions} 1 sim_box
+set type 1 charge -1
+mass 1 5.485e-4
+set type 1 temp ${temp}
+
+#create protons
+create_atoms 2 random ${n_ions} 2 sim_box
+set type 2 charge 1
+mass 2 1.007276
+set type 2 temp ${temp}
+
+#Available qsp potentials:
+#diffraction: qsp/kelbg, qsp/hansen
+#symmetry: qsp/hms, qsp/ugs
+
+#pair_style coul/cut ${coul_cut}
+#pair_coeff * *
+#pair_style hybrid/overlay ${diff_pot} ${sym_pot} coul/long ${coul_cut}
+pair_style hybrid/overlay ${diff_pot} ${sym_pot} coul/cut ${coul_cut}
+pair_coeff * * coul/cut
+#pair_coeff * * coul/long
+
+#symmetry interactions. Second argument = 1, means this is on for this pair interaction
+pair_coeff 1 1 ${sym_pot} ${coul_cut} ${esym_on}
+pair_coeff 1 2 ${sym_pot} ${coul_cut} ${isym_on}
+pair_coeff 2 2 ${sym_pot} ${coul_cut} ${isym_on}
+
+
+#diff interactions. first arg is cutoff, second is on/off, third is style (leave set to 0 for now). 
+#pair_coeff type1 type2 qsp/kelbg cutoff style
+pair_coeff 1 1 ${diff_pot} ${coul_cut} ${ediff_on} 0
+pair_coeff 1 2 ${diff_pot} ${coul_cut} ${ediff_on} 0
+pair_coeff 2 2 ${diff_pot} ${coul_cut} ${idiff_on} 0
+
+thermo 5
+
+#kspace_style pppm ${pppm_rel_error}
+
+neigh_modify one 5000
+neigh_modify delay 0 every 1 check yes
+timestep ${dt}
+
+fix microcanonical_ensemble all nve
+run 5
+
+unfix microcanonical_ensemble
+reset_timestep 0
+
+
+variable tdamp equal ceil(v_etime/v_dt)
+fix canonical_ensemble all nvt temp thermo_temp ${temp} ${tdamp}
+
+dump dumpfix all custom 10 ThermostatOut* id type mass q temp x y z vx vy vz fx fy fz 
+dump_modify dumpfix first yes
+run ${tdamp}
+
+unfix canonical_ensemble
+unfix dumpfix 
+reset_timestep 0
+
+fix canonical_ensemble all nvt temp ${temp} ${temp} ${tdamp}
+dump dumpfix all custom 1 Out* id type mass q temp x y z vx vy vz fx fy fz 
+dump_modify dumpfix first yes
+run ${nsteps}
